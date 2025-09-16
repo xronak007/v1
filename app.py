@@ -17,12 +17,12 @@ from telethon.tl.types import InputMediaPhotoExternal
 # --- Configuration ---
 API_ID = "20701122"
 API_HASH = "5da9975a8293d61e4404a389dfd61f7d"
-SESSION_STRING = "1BVtsOL8Bu1PO7XQp2P93xf43rfLjYso-DEn-xav3eey4Lw-XPabOW1p2_H_qG5qvZiZwnCt1rH-cQS7N8vkPZTNYPAlzfIQ72bdrFAKtDR6UPnCbW80FIfm-zp421iM4EsK_vbxyM1b0ba3jXuDi22ZDpKDhOaZcAQ1_ddcYVp2I5CC4resKIstMCPayIUmOam39WkQuvZ058hK_nBnPFFpjDgPwJ8BWyS7Z3mn7tLZ000XdesXEJNR9a-3VhIwMu8wcUm_9MAZbb5MC02uk1TWcLHMSe347_n9yx5jOgejSa0RWqg64DA8qg64DA8qYhSRE3MMmOITAzZF-acDuJEotL3b5KCXjlxrTAs="
+SESSION_STRING = "1BVtsOL8Bu1PO7XQp2P93xf43rfLjYso-DEn-xav3eey4Lw-XPabOW1p2_H_qG5qvZiZwnCt1rH-cQS7N8vkPZTNYPAlzfIQ72bdrFAKtDR6UPnCbW80FIfm-zp421iM4EsK_vbxyM1b0ba3jXuDi22ZDpKDhOaZcAQ1_ddcYVp2I5CC4resKIstMCPayIUmOam39WkQuvZ058hK_nBnPFFpjDgPwJ8BWyS7Z3mn7tLZ000XdesXEJNR9a-3VhIwMu8wcUm_9MAZbb5MC02uk1TWcLHMSe347_n9yx5jOgejSa0RWqg64DA8qYhSRE3MMmOITAzZF-acDuJEotL3b5KCXjlxrTAs="
 BOT_TOKEN = "8134824419:AAHBKDpbmQMSzXS4oyTGyfrQsLFoniqHDAA"
 
 
 FORWARD_GROUP_ID = -1002930067925
-MONITOR_GROUP_ID = [-1002682944548, -1002647815753, --1002917979890]  # Added new monitor group
+MONITOR_GROUP_ID = [-1002682944548, -1002647815753]  # Added new monitor group
 
 
 client = None
@@ -394,7 +394,7 @@ FORWARD_FORMAT = (
     "▬▬▬▬▬⌁・⌁▬▬▬▬▬\n"
     "{Motivational_text}\n"
     "▬▬▬▬▬⌁・⌁▬▬▬▬▬\n"
-    "◉ 𝙑𝙚𝙧𝙨𝙞𝙤𝙣: 𝘢𝘭𝘱𝘩alpha.5.1-1\n"
+    "◉ 𝙑𝙚𝙧𝙨𝙞𝙤𝙣: 𝘢𝘭𝘱𝘩𝘢1.5.1-1\n"
     "◉ 𝙐𝙥𝙙𝙖𝙩𝙚: @kafkaupdatesx\n"
     "◉ 𝙊𝙬𝙣𝙚𝙧:  @xRonak\n"
     "˖ ❀ ⋆｡˚▬▬▬▬▬▬▬୨୧⋆ ˚"
@@ -456,60 +456,35 @@ async def weekly_dropper(client):
     while True:
         try:
             now = datetime.datetime.now()
-
             # Drop on Sunday at the same hour as the script's start
             if weekly_start_time is None:
                 # If it's the first time, initialize weekly_start_time
                 weekly_start_time = now
 
-            if now.weekday() == 6 and now.hour == weekly_start_time.hour and now.minute >= weekly_start_time.minute:
-                # Read existing CCs from the weekly file
-                existing_ccs = set()
-                if os.path.exists(WEEKLY_CCS_FILE):
-                    try:
-                        with open(WEEKLY_CCS_FILE, "r", encoding="utf-8") as f:
-                            existing_ccs = set(line.strip() for line in f)
-                    except Exception as e:
-                        logging.error(f"Error reading WEEKLY_CCS_FILE: {e}")
-
-                ccs_to_send = [cc for cc in weekly_scraped_ccs if cc not in existing_ccs]  # Filter CCs
-
-                if ccs_to_send:
+            if now.weekday() == 6 and now.hour == weekly_start_time.hour and now.minute >= weekly_start_time.minute:  # Changed this to check minutes as well
+                if weekly_scraped_ccs:
                     caption = (f"Kafka Week Drop\n"
-                               f"Total New CCs: {len(ccs_to_send)}\n"
+                               f"Total CCs: {len(weekly_scraped_ccs)}\n"
                                f"Backup Group: @kafkaupdatesx\n\n"
                                f"Another Drop under 1 week...")
                     try:
-                        # Create a temporary file to write the new CCs
-                        temp_file_path = "temp_weekly_ccs.txt"
-                        with open(temp_file_path, "w", encoding="utf-8") as temp_file:
-                            for cc in ccs_to_send:
-                                temp_file.write(cc + "\n")
+                        if os.path.exists(WEEKLY_CCS_FILE) and os.path.getsize(WEEKLY_CCS_FILE) > 0:  # Same check here
 
-                        # Send the temporary file
-                        msg = await client.send_file(
-                            FORWARD_GROUP_ID,
-                            temp_file_path,
-                            caption=caption
-                        )
-                        await client.pin_message(FORWARD_GROUP_ID, msg.id, notify=False)
-
-                        # Remove the temporary file after sending
-                        os.remove(temp_file_path)
-
-                        # Append the newly sent CCs to the main WEEKLY_CCS_FILE
-                        try:
-                            with open(WEEKLY_CCS_FILE, "a", encoding="utf-8") as weekly_file:
-                                for cc in ccs_to_send:
-                                    weekly_file.write(cc + "\n")  # Append new CCs to the permanent file
-                        except Exception as e:
-                            logging.error(f"Error appending to WEEKLY_CCS_FILE after drop: {e}")
+                            msg = await client.send_file(
+                                FORWARD_GROUP_ID,
+                                WEEKLY_CCS_FILE,
+                                caption=caption
+                            )
+                            await client.pin_message(FORWARD_GROUP_ID, msg.id, notify=False)
+                        else:
+                            logging.warning(f"Weekly CC file {WEEKLY_CCS_FILE} does not exist or is empty. Skipping sending.")
 
                     except Exception as e:
                         logging.exception(f"Error sending/pinning WEEKLY CC file: {e}")
 
-                weekly_scraped_ccs = []  # Reset the list after processing
-
+                weekly_scraped_ccs = []  # Reset the list after the drop
+                if os.path.exists(WEEKLY_CCS_FILE):
+                    os.remove(WEEKLY_CCS_FILE)
                 weekly_start_time = datetime.datetime.now()  # Reset start time
 
         except Exception as e:
@@ -740,4 +715,4 @@ if __name__ == "__main__":
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(shutdown(client, bot))
-        loop.close() 
+        loop.close()
